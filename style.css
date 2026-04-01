@@ -1,0 +1,87 @@
+/* Base Setup and Dark Theme */
+body {
+    background-color: #0b0d17;
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    margin: 0;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+header h1 {
+    color: #4da8da;
+    margin-bottom: 5px;
+}
+
+/* Main Display Box */
+main {
+    width: 100%;
+    max-width: 800px;
+    background-color: #151828;
+    padding: 25px;
+    border-radius: 10px;
+    border: 1px solid #2a3151;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+#title-text {
+    font-size: 1.8rem;
+    margin-bottom: 5px;
+}
+
+.date-label {
+    color: #4da8da;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+#description-text {
+    line-height: 1.6;
+    margin-top: 20px;
+    color: #cccccc;
+    text-align: justify;
+}
+
+/* Make sure the image/video fits perfectly inside the box */
+#media-box img, 
+#media-box iframe {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+    border-radius: 8px;
+    display: block;
+}
+
+/* Simple Loading Animation */
+.spinner {
+    border: 5px solid #2a3151;
+    border-top: 5px solid #4da8da;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 50px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Mobile Adjustments */
+@media (max-width: 600px) {
+    #title-text {
+        font-size: 1.4rem;
+    }
+    main {
+        padding: 15px;
+    }
+}
