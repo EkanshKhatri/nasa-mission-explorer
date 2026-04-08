@@ -1,73 +1,146 @@
-// Get all the HTML elements we need to update
 const spinner = document.getElementById('loading-spinner');
-const contentArea = document.getElementById('main-content');
-const titleElement = document.getElementById('title-text');
-const dateElement = document.getElementById('date-text');
-const mediaBox = document.getElementById('media-box');
-const textExplanation = document.getElementById('description-text');
+const controls = document.getElementById('controls');
+const galleryContainer = document.getElementById('gallery-container');
 
-// API Setup (Swap DEMO_KEY for your real key if you get a 429 connection error)
-const myApiKey = 'uxUMykyIjQ7tmRuJQyExwIgP8to0I27CoeLUHnOQ';
-const nasaEndpoint = `https://api.nasa.gov/planetary/apod?api_key=${myApiKey}`;
+const searchBar = document.getElementById('search-bar');
+const mediaFilter = document.getElementById('media-filter');
+const dateSort = document.getElementById('date-sort');
+const themeToggle = document.getElementById('theme-toggle');
+const datePicker = document.getElementById('date-picker');
 
-// Function to fetch today's picture from NASA
-async function getDailyPicture() {
+const today = new Date().toISOString().split('T')[0];
+datePicker.setAttribute('max', today);
+
+const myApiKey = 'cfvToaF5SfNEr2kD1KwEuuMq9olhJqmIpA8JQe3l'; 
+const nasaUrl = `https://api.nasa.gov/planetary/apod?api_key=${myApiKey}&count=12`;
+
+let originalData = [];
+
+async function fetchNASAData() {
     try {
-        // Make the network request
-        const response = await fetch(nasaEndpoint);
+        const response = await fetch(nasaUrl);
+        if (!response.ok) throw new Error("Failed to fetch data");
 
-        // Check if the server responded correctly
-        if (!response.ok) {
-            throw new Error("Network request failed");
+        originalData = await response.json();
+
+        spinner.style.display = 'none';
+        controls.style.display = 'flex';
+        renderGallery();
+
+    } catch (error) {
+        console.error(error);
+        spinner.style.display = 'none';
+        galleryContainer.innerHTML = `<p style="text-align:center;">Error loading data. Try refreshing.</p>`;
+    }
+}
+
+async function fetchSpecificDate() {
+    const selectedDate = datePicker.value;
+    if (!selectedDate) return; 
+
+    const specificDateUrl = `https://api.nasa.gov/planetary/apod?api_key=${myApiKey}&date=${selectedDate}`;
+
+    try {
+        spinner.style.display = 'block';
+        galleryContainer.innerHTML = ''; 
+
+        const response = await fetch(specificDateUrl);
+        if (!response.ok) throw new Error("Failed to fetch specific date");
+
+        const dayData = await response.json();
+
+        originalData = [dayData];
+        spinner.style.display = 'none';
+        renderGallery();
+
+    } catch (error) {
+        console.error(error);
+        spinner.style.display = 'none';
+        galleryContainer.innerHTML = `<p style="text-align:center;">Could not find a picture for that date. Try another one!</p>`;
+    }
+}
+
+function renderGallery() {
+    let filteredArray = [...originalData];
+
+    const searchTerm = searchBar.value.toLowerCase();
+    if (searchTerm !== "") {
+        filteredArray = filteredArray.filter(function(item) {
+            return item.title.toLowerCase().includes(searchTerm);
+        });
+    }
+
+    const selectedMedia = mediaFilter.value;
+    if (selectedMedia !== "all") {
+        filteredArray = filteredArray.filter(function(item) {
+            return item.media_type === selectedMedia;
+        });
+    }
+
+    const sortOrder = dateSort.value;
+    filteredArray.sort(function(a, b) {
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        
+        if (sortOrder === "newest") {
+            return dateB - dateA;
+        } else {
+            return dateA - dateB;
+        }
+    });
+
+    galleryContainer.innerHTML = '';
+
+    if (filteredArray.length === 0) {
+        galleryContainer.innerHTML = `<p style="text-align:center; width: 100%;">No matches found.</p>`;
+        return;
+    }
+
+    filteredArray.forEach(function(item) {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        let mediaContent = '';
+        if (item.media_type === 'image') {
+            mediaContent = `<img src="${item.url}" alt="${item.title}">`;
+        } else if (item.media_type === 'video') {
+            mediaContent = `<iframe src="${item.url}" frameborder="0" allowfullscreen></iframe>`;
         }
 
-        // Convert the response into a readable JavaScript object
-        const spaceData = await response.json();
-        
-        // Pass the data to our function that updates the screen
-        renderDataOnPage(spaceData);
+        card.innerHTML = `
+            ${mediaContent}
+            <h3>${item.title}</h3>
+            <p class="date-label">Date: ${item.date}</p>
+            <button class="like-btn">🤍 Like</button>
+        `;
 
-    } catch (err) {
-        console.error("Failed to fetch:", err);
-        
-        // Show a fallback error message on the screen if it fails
-        spinner.style.display = 'none';
-        contentArea.style.display = 'block';
-        titleElement.innerText = "Oops! Connection Error";
-        textExplanation.innerText = "Could not load today's picture. Please check your internet or try again later.";
-    }
+        const likeButton = card.querySelector('.like-btn');
+        likeButton.addEventListener('click', function() {
+            likeButton.classList.toggle('liked');
+            if (likeButton.classList.contains('liked')) {
+                likeButton.innerText = "❤️ Liked!";
+            } else {
+                likeButton.innerText = "🤍 Like";
+            }
+        });
+
+        galleryContainer.appendChild(card);
+    });
 }
 
-// Function to update the HTML with the API data
-function renderDataOnPage(data) {
-    // Hide the loading spinner and show the main content container
-    spinner.style.display = 'none';
-    contentArea.style.display = 'block';
-
-    // Update the basic text fields
-    titleElement.innerText = data.title;
-    dateElement.innerText = "Date: " + data.date;
-    textExplanation.innerText = data.explanation;
-
-    // Clear out the media box just in case
-    mediaBox.innerHTML = ''; 
-
-    // Figure out if NASA sent an image or a YouTube video today
-    if (data.media_type === 'image') {
-        const imgElement = document.createElement('img');
-        imgElement.src = data.url;
-        imgElement.alt = data.title;
-        mediaBox.appendChild(imgElement);
-    } 
-    else if (data.media_type === 'video') {
-        const videoIframe = document.createElement('iframe');
-        videoIframe.src = data.url;
-        videoIframe.title = data.title;
-        videoIframe.setAttribute('frameborder', '0');
-        videoIframe.setAttribute('allowfullscreen', 'true');
-        mediaBox.appendChild(videoIframe);
+themeToggle.addEventListener('click', function() {
+    document.body.classList.toggle('light-mode');
+    
+    if (document.body.classList.contains('light-mode')) {
+        themeToggle.innerText = "🌙 Dark Mode";
+    } else {
+        themeToggle.innerText = "☀️ Light Mode";
     }
-}
+});
 
-// Kick off the process as soon as the file loads
-getDailyPicture();
+searchBar.addEventListener('input', renderGallery);
+mediaFilter.addEventListener('change', renderGallery);
+dateSort.addEventListener('change', renderGallery);
+datePicker.addEventListener('change', fetchSpecificDate);
+
+fetchNASAData();

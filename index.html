@@ -8,21 +8,34 @@
 </head>
 <body>
     <header>
-        <h1>🚀 NASA Mission Explorer</h1>
-        <p>Astronomy Picture of the Day</p>
+        <div class="header-content">
+            <h1>🚀 NASA Mission Explorer</h1>
+            <button id="theme-toggle" class="theme-btn">☀️ Light Mode</button>
+        </div>
+        <p>Discover the Universe</p>
     </header>
 
     <main>
+        <section id="controls" style="display: none;">
+            <input type="text" id="search-bar" placeholder="Search by title...">
+            
+            <select id="media-filter">
+                <option value="all">All Media</option>
+                <option value="image">Images Only</option>
+                <option value="video">Videos Only</option>
+            </select>
+
+            <select id="date-sort">
+                <option value="newest">Sort: Newest First</option>
+                <option value="oldest">Sort: Oldest First</option>
+            </select>
+
+            <input type="date" id="date-picker" title="Click to open calendar" onclick="this.showPicker()">
+        </section>
+
         <div id="loading-spinner" class="spinner"></div>
 
-        <div id="main-content" style="display: none;">
-            <h2 id="title-text"></h2>
-            <p id="date-text" class="date-label"></p>
-            
-            <div id="media-box"></div>
-            
-            <p id="description-text"></p>
-        </div>
+        <div id="gallery-container" class="gallery"></div>
     </main>
 
     <script src="script.js"></script>
