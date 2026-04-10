@@ -15,10 +15,31 @@ const myApiKey = 'cfvToaF5SfNEr2kD1KwEuuMq9olhJqmIpA8JQe3l';
 const nasaUrl = `https://api.nasa.gov/planetary/apod?api_key=${myApiKey}&count=12`;
 
 let originalData = [];
+let debounceTimer;
+
+if (localStorage.getItem('theme') === 'light') {
+    document.body.classList.add('light-mode');
+    themeToggle.innerText = "🌙 Dark Mode";
+}
+
+async function fetchWithTimeout(resource, options = {}) {
+    const { timeout = 8000 } = options;
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    
+    try {
+        const response = await fetch(resource, { ...options, signal: controller.signal });
+        clearTimeout(id);
+        return response;
+    } catch (error) {
+        clearTimeout(id);
+        throw error;
+    }
+}
 
 async function fetchNASAData() {
     try {
-        const response = await fetch(nasaUrl);
+        const response = await fetchWithTimeout(nasaUrl);
         if (!response.ok) throw new Error("Failed to fetch data");
 
         originalData = await response.json();
@@ -30,7 +51,7 @@ async function fetchNASAData() {
     } catch (error) {
         console.error(error);
         spinner.style.display = 'none';
-        galleryContainer.innerHTML = `<p style="text-align:center;">Error loading data. Try refreshing.</p>`;
+        galleryContainer.innerHTML = `<p style="text-align:center; width:100%;">Connection timed out or failed. Please check your internet and try refreshing.</p>`;
     }
 }
 
@@ -44,7 +65,7 @@ async function fetchSpecificDate() {
         spinner.style.display = 'block';
         galleryContainer.innerHTML = ''; 
 
-        const response = await fetch(specificDateUrl);
+        const response = await fetchWithTimeout(specificDateUrl);
         if (!response.ok) throw new Error("Failed to fetch specific date");
 
         const dayData = await response.json();
@@ -56,7 +77,7 @@ async function fetchSpecificDate() {
     } catch (error) {
         console.error(error);
         spinner.style.display = 'none';
-        galleryContainer.innerHTML = `<p style="text-align:center;">Could not find a picture for that date. Try another one!</p>`;
+        galleryContainer.innerHTML = `<p style="text-align:center; width:100%;">Connection timed out or picture not found. Try another date!</p>`;
     }
 }
 
@@ -133,12 +154,18 @@ themeToggle.addEventListener('click', function() {
     
     if (document.body.classList.contains('light-mode')) {
         themeToggle.innerText = "🌙 Dark Mode";
+        localStorage.setItem('theme', 'light');
     } else {
         themeToggle.innerText = "☀️ Light Mode";
+        localStorage.setItem('theme', 'dark');
     }
 });
 
-searchBar.addEventListener('input', renderGallery);
+searchBar.addEventListener('input', function() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(renderGallery, 300);
+});
+
 mediaFilter.addEventListener('change', renderGallery);
 dateSort.addEventListener('change', renderGallery);
 datePicker.addEventListener('change', fetchSpecificDate);
